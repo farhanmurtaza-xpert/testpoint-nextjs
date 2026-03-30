@@ -6,7 +6,7 @@ export default function Home() {
   const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
-    fetch("/api/questions")
+    fetch("/api/question")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setQuestions(data.questions);
