@@ -34,7 +34,7 @@ export default async function handler(req, res) {
   } else if (req.method === "GET") {
     // Fetch all questions from DB
     try {
-      const [rows] = await db.query("SELECT * FROM questions");
+      const rows = await db`SELECT * FROM questions`;
 
       // Map DB columns to frontend format for Home page
       const questions = rows.map(q => ({
