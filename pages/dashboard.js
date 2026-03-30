@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOption, setCorrectOption] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
@@ -18,21 +19,39 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch("/api/questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, question, options, correctOption }),
-    });
+    // Validate options before sending
+    if (options.some(opt => !opt.trim()) || !correctOption.trim()) {
+      setMessage("All options and correct option are required.");
+      return;
+    }
 
-    const data = await res.json();
-    setMessage(data.message);
+    setLoading(true);
+    setMessage("");
 
-    // Clear form if success
-    if (data.success) {
-      setSubject("");
-      setQuestion("");
-      setOptions(["", "", "", ""]);
-      setCorrectOption("");
+    try {
+      const res = await fetch("/api/questions", { // <-- correct plural route
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, question, options, correctOption }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage("Question added successfully!");
+        // Clear form
+        setSubject("");
+        setQuestion("");
+        setOptions(["", "", "", ""]);
+        setCorrectOption("");
+      } else {
+        setMessage(data.message || "Failed to add question.");
+      }
+    } catch (err) {
+      console.error("Error submitting question:", err);
+      setMessage("Database connection failed. Please check your setup.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,15 +85,21 @@ export default function Dashboard() {
           />
         ))}
         <br />
-        <input
-          type="text"
-          placeholder="Correct Option"
+        {/* Make correct option a dropdown to avoid mismatches */}
+        <select
           value={correctOption}
           onChange={(e) => setCorrectOption(e.target.value)}
           required
-        />
-        <br />
-        <button type="submit">Add Question</button>
+        >
+          <option value="" disabled>Select Correct Option</option>
+          {options.map((opt, idx) => (
+            <option key={idx} value={opt}>{opt || `Option ${idx + 1}`}</option>
+          ))}
+        </select>
+        <br /><br />
+        <button type="submit" disabled={loading}>
+          {loading ? "Adding..." : "Add Question"}
+        </button>
       </form>
       {message && <p>{message}</p>}
     </div>
